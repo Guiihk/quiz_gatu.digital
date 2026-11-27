@@ -373,3 +373,30 @@
 .quiz-screen[data-custom-background="true"] .quiz-option input:focus-visible + .option-letter {
   outline-color: var(--quiz-foreground);
 }
+.quiz-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.quiz-copy-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.quiz-copy-tools button {
+  min-width: 30px;
+  min-height: 32px;
+  padding-inline: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.quiz-copy-field .quiz-copy-tools input[type="color"] {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 3px;
+}

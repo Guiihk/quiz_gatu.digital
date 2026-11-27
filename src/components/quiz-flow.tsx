@@ -8,6 +8,8 @@ import { formatBookingTime, type BookingWindow, type SlotDay } from "../lib/sche
 import type { CampaignSource } from "../lib/quiz";
 import { ExampleSlotCalendar, SlotCalendar } from "./slot-calendar";
 
+import { QuizCopy } from "./quiz-copy";
+
 const QUESTION_FIELDS = {
   1: { title: "nameTitle", subtitle: "nameSubtitle" },
   2: { title: "phoneTitle", subtitle: "phoneSubtitle" },
@@ -65,11 +67,11 @@ export function QuizScreen({ config, step, position, interactive = false, answer
       </div>
     )}
     <form className="quiz-content" onSubmit={e=>{e.preventDefault();onNext?.();}} noValidate>
-      {step===0&&<>{config.welcomeKicker.trim() && <span className="quiz-kicker uppercase">{config.welcomeKicker}</span>}<h2>{config.headline}</h2><p className="quiz-subheadline">{config.subheadline}</p><p className="quiz-support">{config.support}</p><button type="submit" className="quiz-cta" disabled={!interactive}>{config.cta}<ArrowRight size={19}/></button><span className="quiz-footnote"><Clock size={14}/>Leva poucos minutos</span></>}
+      {step===0&&<>{config.welcomeKicker.trim() && <span className="quiz-kicker uppercase">{config.welcomeKicker}</span>}<h2><QuizCopy value={config.headline}/></h2><p className="quiz-subheadline"><QuizCopy value={config.subheadline}/></p><p className="quiz-support"><QuizCopy value={config.support}/></p><button type="submit" className="quiz-cta" disabled={!interactive} style={{ fontSize: config.ctaFontSize }}>{config.cta}<ArrowRight size={19}/></button><span className="quiz-footnote"><Clock size={14}/>Leva poucos minutos</span></>}
       {questionFields && <>
         <span className="question-index">{stepNumber} <ArrowRight size={14}/></span>
-        <h2>{config[questionFields.title].trim() || DEFAULT_CONFIG[questionFields.title]}{required && <span className="required"> *</span>}</h2>
-        {config[questionFields.subtitle].trim() && <p className="question-support">{config[questionFields.subtitle]}</p>}
+        <h2><QuizCopy value={config[questionFields.title].trim() || DEFAULT_CONFIG[questionFields.title]}/>{required && <span className="required"> *</span>}</h2>
+        {config[questionFields.subtitle].trim() && <p className="question-support"><QuizCopy value={config[questionFields.subtitle]}/></p>}
       </>}
       {step >= 1 && step <= 3 && <>
         <label className="sr-only" htmlFor={answerId}>
@@ -112,13 +114,13 @@ export function QuizScreen({ config, step, position, interactive = false, answer
           {submitting ? "Enviando…" : bookingEnabled ? "Confirmar agendamento" : "Enviar respostas"}<ArrowRight size={18}/></button>
           : <><p className="preview-disclaimer">Prévia de layout. Nenhuma reunião é criada.</p><button className="quiz-cta" type="button" disabled>Agendamento disponível após integração</button></>}
       </>}
-      {step===7&&<><span className="alternative-symbol"><Globe size={32}/></span>{config.offerKicker.trim() && <span className="quiz-kicker uppercase">{config.offerKicker}</span>}<h2>{config.offerTitle}</h2><p className="quiz-subheadline">{config.offerText}</p>{publicMode ? <button className="quiz-cta" type="submit" disabled={submitting}>{submitting ? "Enviando…" : "Enviar respostas"}<ArrowRight size={18}/></button> : safeExternalUrl(config.offerUrl)?<a className="quiz-cta" href={safeExternalUrl(config.offerUrl)!} target="_blank" rel="noopener noreferrer" tabIndex={interactive?0:-1} onClick={e=>{if(!interactive)e.preventDefault();}}>{config.offerCta}<ArrowRight size={18}/></a>:<><button className="quiz-cta" type="button" disabled>{config.offerCta}<ArrowRight size={18}/></button><p className="preview-disclaimer">Configure o link desta oferta no editor para ativar o botão.</p></>}</>}
+      {step===7&&<><span className="alternative-symbol"><Globe size={32}/></span>{config.offerKicker.trim() && <span className="quiz-kicker uppercase">{config.offerKicker}</span>}<h2><QuizCopy value={config.offerTitle}/></h2><p className="quiz-subheadline"><QuizCopy value={config.offerText}/></p>{publicMode ? <button className="quiz-cta" type="submit" disabled={submitting}>{submitting ? "Enviando…" : "Enviar respostas"}<ArrowRight size={18}/></button> : safeExternalUrl(config.offerUrl)?<a className="quiz-cta" href={safeExternalUrl(config.offerUrl)!} target="_blank" rel="noopener noreferrer" tabIndex={interactive?0:-1} onClick={e=>{if(!interactive)e.preventDefault();}} style={{ fontSize: config.offerCtaFontSize }}>{config.offerCta}<ArrowRight size={18}/></a>:<><button className="quiz-cta" type="button" disabled style={{ fontSize: config.offerCtaFontSize }}>{config.offerCta}<ArrowRight size={18}/></button><p className="preview-disclaimer">Configure o link desta oferta no editor para ativar o botão.</p></>}</>}
       {customScreen && <>
         <span className="question-index">{stepNumber} <ArrowRight size={14}/></span>
-        <h2 id={answerId + "-title"}>{customScreen.title.trim() || "Nova tela"}
+        <h2 id={answerId + "-title"}><QuizCopy value={customScreen.title.trim() || "Nova tela"}/>
           {customScreen.kind === "text" && customScreen.required && <span className="required"> *</span>}
         </h2>
-        {customScreen.subtitle.trim() && <p className="question-support">{customScreen.subtitle}</p>}
+        {customScreen.subtitle.trim() && <p className="question-support"><QuizCopy value={customScreen.subtitle}/></p>}
         {customScreen.kind === "text" && (
           <input className="quiz-input" type="text" aria-labelledby={answerId + "-title"}
             aria-required={customScreen.required} aria-invalid={!!error}
@@ -151,10 +153,10 @@ export function QuizCompletion({ config, kind, preview = false, booking }: {
   return <section className="quiz-complete" role={preview ? undefined : "status"}
     style={{ backgroundColor: config.backgroundColor, color: readableForeground(config.backgroundColor) }}>
     <Check size={30} aria-hidden="true"/>
-    <Heading>{title}</Heading>
+    <Heading><QuizCopy value={title}/></Heading>
     {booking && <p><strong>{formatBookingTime(booking.start)}</strong><br/>Horário de Brasília</p>}
-    {message.trim() && <p>{message}</p>}
-    {offerUrl && <a className="button primary" href={offerUrl} rel="noopener noreferrer">{config.offerCta || "Conhecer a oferta"}</a>}
+    {message.trim() && <p><QuizCopy value={message}/></p>}
+    {offerUrl && <a className="button primary" href={offerUrl} rel="noopener noreferrer" style={{ fontSize: config.offerCtaFontSize }}>{config.offerCta || "Conhecer a oferta"}</a>}
   </section>;
 }
 

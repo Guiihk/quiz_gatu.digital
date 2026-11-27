@@ -5,6 +5,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, CalendarBlank, Check, CheckC
 import { DEFAULT_CONFIG, DESTINATION_LABELS, INVESTMENT_OPTIONS, REVENUE_OPTIONS, getScreenSequence, isAnswerScreen, parseConfig, OFFER_SCREEN, type CustomScreen, type QuizConfig, type QuizRules } from "../lib/quiz";
 
 import { createQuiz, loadQuizResponses, openQuizDraft, publishQuiz, saveDraft, signOut } from "../app/actions";
+import { QuizCopyField } from "./quiz-copy";
 import { quizSlug } from "../lib/quiz";
 
 import AgendaPanel from "./agenda-panel";
@@ -251,9 +252,16 @@ export default function Workspace({ initialQuizzes, initialAgenda, googleConnect
   }
 
   const questionFields = getQuestionFields(step);
-  const field = (key: keyof QuizConfig, label: string, multiline = false) => <label className="field" key={key}>{label}{multiline
-    ? <textarea value={String(config[key])} rows={3} onChange={e => change(key, e.target.value as never)} />
-    : <input value={String(config[key])} onChange={e => change(key, e.target.value as never)} />}</label>;
+  const field = (key: keyof QuizConfig, label: string, multiline = false) => multiline
+    ? <QuizCopyField key={key} label={label} value={String(config[key])} onChange={value => change(key, value as never)}/>
+    : <label className="field" key={key}>{label}<input value={String(config[key])} onChange={e => change(key, e.target.value as never)}/></label>;
+
+  const buttonSize = (key: "ctaFontSize" | "offerCtaFontSize") => <label className="field">Tamanho do texto do botão (px)
+    <select value={config[key] ?? ""} onChange={event => change(key, Number(event.target.value) || undefined)}>
+      <option value="">Padrão</option>
+      {Array.from({ length: 23 }, (_, index) => index + 10).map(size => <option key={size}>{size}</option>)}
+    </select>
+  </label>;
 
   return <div className="workspace">
     <a className="skip" href="#content">Ir para o conteúdo</a>
@@ -293,7 +301,13 @@ export default function Workspace({ initialQuizzes, initialAgenda, googleConnect
           <section className="import-banner publication-bar" aria-label="Link do quiz">
             <div>
               <strong>{publication ? "Link do quiz" : "Endereço sugerido"}</strong>
-              <p><code>/{publication?.slug ?? quizSlug(config.name)}</code></p>
+              <label className="field">Endereço público
+                <input spellCheck={false} maxLength={70} placeholder={publication?.slug ?? quizSlug(config.name)}
+                  value={config.publicSlug} onChange={event => change("publicSlug", event.target.value)}/>
+              </label>
+              <p><code>/{config.publicSlug || publication?.slug || quizSlug(config.name)}</code></p>
+              {publication && config.publicSlug && config.publicSlug !== publication.slug &&
+                <small>Ao publicar, o endereço /{publication.slug} deixará de abrir este quiz.</small>}
               {(dirty || !revision) && <small>Salve o rascunho antes de publicar.</small>}
             </div>
             <div className="publication-actions">
@@ -352,12 +366,10 @@ export default function Workspace({ initialQuizzes, initialAgenda, googleConnect
               )}
               {customScreen && (
                 <div>
-                  <label className="field">Título
-                    <input value={customScreen.title} onChange={e => updateScreen({ ...customScreen, title: e.target.value })}/>
-                  </label>
-                  <label className="field">Subtítulo
-                    <textarea rows={3} value={customScreen.subtitle} onChange={e => updateScreen({ ...customScreen, subtitle: e.target.value })}/>
-                  </label>
+                  <QuizCopyField key={customScreen.id + "-title"} label="Título" value={customScreen.title}
+                    onChange={title => updateScreen({ ...customScreen, title })}/>
+                  <QuizCopyField key={customScreen.id + "-subtitle"} label="Subtítulo" value={customScreen.subtitle}
+                    onChange={subtitle => updateScreen({ ...customScreen, subtitle })}/>
                   {customScreen.kind === "text" && (
                     <label className="screen-required">
                       <input type="checkbox" checked={customScreen.required} onChange={e => updateScreen({ ...customScreen, required: e.target.checked })}/>
@@ -367,7 +379,7 @@ export default function Workspace({ initialQuizzes, initialAgenda, googleConnect
                   <button className="text-button" onClick={() => removeScreen(customScreen.id)}>Remover tela</button>
                 </div>
               )}
-              {step===0 && <>{field("welcomeKicker","Frase acima do título")}{field("headline","Título principal",true)}{field("subheadline","Subtítulo",true)}{field("support","Texto de suporte",true)}{field("cta","Texto do botão")}<label className="field">Logotipo personalizado<span className="upload-control"><UploadSimple size={18}/>Enviar imagem<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{void upload(e.target.files?.[0]);e.target.value="";}}/></span><small>PNG, JPG ou WebP · até 800 KB</small></label>{config.logo&&<button className="text-button" onClick={()=>change("logo","")}>Remover logotipo</button>}<label className="field">Cor dos botões<div className="color-field"><input aria-label="Cor dos botões" type="color" value={config.color} onChange={e=>change("color",e.target.value)}/><span>{config.color.toUpperCase()}</span></div></label></>}
+              {step===0 && <>{field("welcomeKicker","Frase acima do título")}{field("headline","Título principal",true)}{field("subheadline","Subtítulo",true)}{field("support","Texto de suporte",true)}{field("cta","Texto do botão")}{buttonSize("ctaFontSize")}<label className="field">Logotipo personalizado<span className="upload-control"><UploadSimple size={18}/>Enviar imagem<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{void upload(e.target.files?.[0]);e.target.value="";}}/></span><small>PNG, JPG ou WebP · até 800 KB</small></label>{config.logo&&<button className="text-button" onClick={()=>change("logo","")}>Remover logotipo</button>}<label className="field">Cor dos botões<div className="color-field"><input aria-label="Cor dos botões" type="color" value={config.color} onChange={e=>change("color",e.target.value)}/><span>{config.color.toUpperCase()}</span></div></label></>}
               {step === 0 && (
                 <label className="field">
                   Cor de fundo do quiz
@@ -420,17 +432,17 @@ export default function Workspace({ initialQuizzes, initialAgenda, googleConnect
                     </select>
                   </label>
                   {confirmationKind === "booking" ? <>
-                    {field("bookingConfirmationTitle", "Título da confirmação")}
+                    {field("bookingConfirmationTitle", "Título da confirmação", true)}
                     {field("bookingConfirmationMessage", "Mensagem final", true)}
                     <p className="muted">Exibida depois que o horário é reservado.</p>
                   </> : <>
-                    {field("contactConfirmationTitle", "Título da confirmação")}
+                    {field("contactConfirmationTitle", "Título da confirmação", true)}
                     {field("contactConfirmationMessage", "Mensagem final", true)}
                     <p className="muted">Exibida no quiz publicado após o envio do contato.</p>
                   </>}
                 </div>
               )}
-              {step===7&&<>{field("offerKicker","Frase acima do título")}{field("offerTitle","Título da oferta",true)}{field("offerText","Descrição",true)}{field("offerCta","Texto do botão")}{field("offerUrl","Link da oferta (HTTPS)")}<p className="muted">Configure o destino do produto ou serviço de menor ticket.</p></>}
+              {step===7&&<>{field("offerKicker","Frase acima do título")}{field("offerTitle","Título da oferta",true)}{field("offerText","Descrição",true)}{field("offerCta","Texto do botão")}{buttonSize("offerCtaFontSize")}{field("offerUrl","Link da oferta (HTTPS)")}<p className="muted">Configure o destino do produto ou serviço de menor ticket.</p></>}
             </div></section>
           </div>}
           {tab === "Regras" && (
@@ -441,7 +453,7 @@ export default function Workspace({ initialQuizzes, initialAgenda, googleConnect
             />
           )}
           {tab === "Respostas" && <QuizResponses quizId={quizId}/>}
-          {tab==="Configurações"&&<div className="settings-page"><h2>Configurações do quiz</h2>{field("name","Nome interno do quiz")}{field("meetingTitle","Nome da reunião")}<Duration value={config.duration} onChange={v=>change("duration",v)}/><div className="property-note"><Info size={18}/><p>Use Atualizar publicação para enviar a versão salva para o mesmo endereço.</p></div><button className="button primary" disabled={saving} onClick={save}>{saving ? "Salvando…" : "Salvar rascunho"}</button></div>}
+          {tab==="Configurações"&&<div className="settings-page"><h2>Configurações do quiz</h2>{field("name","Nome interno do quiz")}{field("meetingTitle","Nome da reunião")}<Duration value={config.duration} onChange={v=>change("duration",v)}/><div className="property-note"><Info size={18}/><p>Salve o rascunho e atualize a publicação para aplicar as alterações ao quiz público.</p></div><button className="button primary" disabled={saving} onClick={save}>{saving ? "Salvando…" : "Salvar rascunho"}</button></div>}
         </> : view === "Agendamentos" ? <><PageHeading title="Agendamentos" text="Defina os horários disponíveis e acompanhe as reservas confirmadas."/><AgendaPanel googleConnectionError={googleConnectionError}/></> : view==="Configurações" ? <><PageHeading title="Configurações" text="Os detalhes que fazem sua operação funcionar."/><div className="settings-page"><h2>Reuniões por quiz</h2><p className="muted">Edite o nome e a duração da reunião nas configurações de cada quiz.</p><button className="button secondary" onClick={() => { setView("Quizzes"); if (quizId !== null) setTab("Configurações"); }}>Abrir quizzes</button><h2 className="spaced-title">Integrações</h2><button className="button secondary" onClick={() => setView("Agendamentos")}>Configurar agenda e e-mail</button><MetaSettingsPanel/></div></> : view==="Início" ? <><PageHeading title="Sua captação, em um só lugar." text="Estamos montando o caminho entre o primeiro clique e a próxima reunião."/><div className="overview"><span className="badge green">ETAPA 1</span><h2>Suas páginas de captação</h2><p>Edite a apresentação, confira as regras e percorra a experiência do lead antes de conectar suas ferramentas.</p><button className="button primary" onClick={()=>setView("Quizzes")}>Abrir quizzes <ArrowRight size={18}/></button><div className="milestones"><span><CheckCircle/>Editor e prévia</span><span><Clock/>Agenda e integrações</span><span><CheckCircle/>CRM</span></div></div></> : <><PageHeading title="CRM" text="Acompanhe os leads com reunião agendada e avance cada negociação."/><CrmBoard/></>}
       </main><footer className="app-footer"><span>gatu.digital</span><span>Agendador local</span></footer>
     </div>

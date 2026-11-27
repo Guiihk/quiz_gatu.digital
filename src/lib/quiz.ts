@@ -45,6 +45,9 @@ export type QuizConfig = {
   name: string;
   welcomeKicker: string;
   headline: string;
+  publicSlug: string;
+  ctaFontSize?: number;
+  offerCtaFontSize?: number;
   subheadline: string;
   support: string;
   cta: string;
@@ -188,6 +191,7 @@ export const DEFAULT_CONFIG: QuizConfig = {
   name: "Diagnóstico de marketing",
   welcomeKicker: "Estratégia para o seu negócio",
   headline: "O próximo passo para sua empresa crescer começa aqui.",
+  publicSlug: "",
   subheadline: "Converse com a gatu.digital sobre uma estratégia de anúncios para o seu negócio.",
   support: "Responda algumas perguntas. Se houver alinhamento, você poderá escolher um horário para conversar com a gente.",
   cta: "Quero conhecer as possibilidades",
@@ -262,6 +266,10 @@ export function parseConfig(value: unknown): QuizConfig | null {
   if (!/^#[0-9a-f]{6}$/i.test(result.color)) result.color = DEFAULT_CONFIG.color;
   if (!/^#[0-9a-f]{6}$/i.test(result.backgroundColor)) result.backgroundColor = DEFAULT_CONFIG.backgroundColor;
   if (typeof item.duration === "number" && Number.isInteger(item.duration) && item.duration >= 15 && item.duration <= 240) result.duration = item.duration;
+  for (const key of ["ctaFontSize", "offerCtaFontSize"] as const) {
+    const size = item[key];
+    if (typeof size === "number" && Number.isInteger(size) && size >= 10 && size <= 32) result[key] = size;
+  }
   if (result.logo && !/^data:image\/(png|jpeg|webp);base64,/.test(result.logo)) result.logo = "";
   result.rules = parseRules(item.rules);
   result.requiredAnswers = { ...DEFAULT_CONFIG.requiredAnswers };

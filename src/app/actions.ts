@@ -94,6 +94,9 @@ export async function saveDraft(quizId: number, data: unknown, expectedRevision:
     return { error: "Preencha o nome, o título e o botão de abertura." };
   }
   if (config.offerUrl && !safeExternalUrl(config.offerUrl)) return { error: "Use um link HTTPS válido para a oferta alternativa." };
+  if (config.publicSlug && config.publicSlug !== quizSlug(config.publicSlug)) {
+    return { error: "Use até 70 caracteres no endereço, com letras minúsculas, números e hífens. Alguns endereços são reservados." };
+  }
   const serialized = JSON.stringify(config);
   if (Buffer.byteLength(serialized) > 1_250_000) return { error: "O rascunho excedeu o tamanho permitido." };
   const revision = writeDraft(serialized, expectedRevision, quizId);
@@ -109,8 +112,11 @@ export async function publishQuiz(quizId: number, revision: number) {
   const config = parseConfig(JSON.parse(draft.config));
   if (!config) return { error: "Não foi possível abrir esse rascunho." };
 
-  const publication = publishDraft(quizSlug(config.name), revision, quizId);
+  const previousSlug = readQuizPublication(quizId)?.slug;
+  const publication = publishDraft(quizSlug(config.name), revision, quizId, config.publicSlug);
+  if (publication === null) return { error: "Esse endereço já está em uso por outro quiz. Escolha outro." };
   if (!publication) return { error: "O rascunho mudou em outra aba. Recarregue para publicar." };
+  if (previousSlug && previousSlug !== publication.slug) revalidatePath(`/${previousSlug}`);
   revalidatePath(`/${publication.slug}`);
   return { publication };
 }

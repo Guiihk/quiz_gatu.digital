@@ -56,4 +56,14 @@ test('migra o quiz original e mantém links, revisões, respostas e reservas sep
   assert.equal(reserveBooking('quiz-original', 4, 1, 'overlap', slot, 'Reunião', contact), null);
   assert.deepEqual(new Set(recentQuizResponses(1).map(response => response.id)), new Set(['original-response', 'first-response']));
   assert.deepEqual(new Set(recentQuizResponses(second).map(response => response.id)), new Set(['second-response', 'second-booking']));
+
+  assert.equal(publishDraft('novo-titulo', 4, 1, 'quiz-original-2'), null);
+  assert.equal(readPublication('quiz-original').revision, 4);
+  assert.deepEqual(publishDraft('novo-titulo', 4, 1, 'diagnostico-personalizado'), {
+    slug: 'diagnostico-personalizado', revision: 4,
+  });
+  assert.equal(readPublication('quiz-original'), undefined);
+  assert.equal(insertQuizResponse('diagnostico-personalizado', 4, 'renamed-response', contact), true);
+  assert.deepEqual(new Set(recentQuizResponses(1).map(response => response.id)),
+    new Set(['original-response', 'first-response', 'renamed-response']));
 });

@@ -323,25 +323,26 @@ export function readPublication(slug: string) {
     { slug: string; config: string; revision: number } | undefined;
 }
 
-export function publishDraft(baseSlug: string, revision: number, quizId = 1) {
+export function publishDraft(baseSlug: string, revision: number, quizId = 1, requestedSlug = "") {
   const connection = db();
   connection.exec("BEGIN IMMEDIATE");
   try {
     const draft = loadDraft(quizId);
     if (!draft || draft.revision !== revision) return undefined;
 
-    let slug = readQuizPublication(quizId)?.slug;
+    const used = connection.prepare("SELECT 1 FROM quiz_publications WHERE slug = ? AND quiz_id <> ?");
+    if (requestedSlug && used.get(requestedSlug, quizId)) return null;
+    let slug = requestedSlug || readQuizPublication(quizId)?.slug;
     if (!slug) {
       slug = baseSlug;
-      const used = connection.prepare("SELECT 1 FROM quiz_publications WHERE slug = ?");
-      for (let index = 2; used.get(slug); index++) {
+      for (let index = 2; used.get(slug, quizId); index++) {
         const suffix = `-${index}`;
         slug = baseSlug.slice(0, 70 - suffix.length).replace(/-+$/, "") + suffix;
       }
     }
     connection.prepare(`
       INSERT INTO quiz_publications (quiz_id, slug, config, revision) VALUES (?, ?, ?, ?)
-      ON CONFLICT(quiz_id) DO UPDATE SET config = excluded.config, revision = excluded.revision
+      ON CONFLICT(quiz_id) DO UPDATE SET slug = excluded.slug, config = excluded.config, revision = excluded.revision
     `).run(quizId, slug, draft.config, revision);
     connection.exec("COMMIT");
     return { slug, revision };
