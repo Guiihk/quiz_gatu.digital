@@ -58,7 +58,7 @@ export function QuizScreen({ config, step, position, interactive = false, answer
     data-custom-background={config.backgroundColor.toLowerCase() !== "#ffffff"}
     style={theme}
   >
-    <div className="quiz-brand">{config.logo?<img src={config.logo} alt="Logotipo personalizado"/>:<span className="quiz-wordmark">gatu.digital<span>®</span></span>}</div>
+    <div className="quiz-brand">{config.logo?<img src={config.logo} alt="Logotipo personalizado"/>:<img src="/gatu-logo.png" alt="gatu.digital" width={48} height={48}/>}</div>
     {!isWelcome && position >= 0 && (
       <div className="quiz-progress" role="progressbar" aria-label="Progresso do quiz" aria-valuemin={0} aria-valuemax={total} aria-valuenow={position + 1}>
         <span style={{ width: ((position + 1) / total * 100) + "%" }}/>

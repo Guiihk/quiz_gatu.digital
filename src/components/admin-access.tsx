@@ -9,7 +9,7 @@ export default function AdminAccess({ setup }: { setup: boolean }) {
   return (
     <main className="access-page">
       <section className="access-card">
-        <div className="brand"><span className="brand-mark">g.</span><span>gatu.digital</span></div>
+        <div className="brand"><img className="brand-mark" src="/gatu-logo.png" alt="" width={37} height={37}/><span>gatu.digital</span></div>
         <h1>{setup ? "Crie seu acesso administrativo" : "Entre no Agendador"}</h1>
         <form action={submit}>
           <input type="hidden" name="mode" value={setup ? "setup" : "login"}/>

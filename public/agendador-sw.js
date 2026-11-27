@@ -5,7 +5,7 @@ self.addEventListener("push", event => {
 
   event.waitUntil(self.registration.showNotification("Novo agendamento", {
     body: "Um lead confirmou uma reunião. Abra o Agendador para ver os detalhes.",
-    icon: "/icon.svg",
+    icon: "/gatu-logo.png",
     tag: "agendador-reserva-" + payload.id,
   }));
 });

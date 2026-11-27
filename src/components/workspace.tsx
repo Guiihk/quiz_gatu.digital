@@ -258,7 +258,7 @@ export default function Workspace({ initialQuizzes, initialAgenda, googleConnect
   return <div className="workspace">
     <a className="skip" href="#content">Ir para o conteúdo</a>
     <aside className={`sidebar ${sidebar ? "open" : ""}`}>
-      <a className="brand" href="/" aria-label="gatu.digital início"><span className="brand-mark">g.</span><span>gatu.digital<small>Workspace</small></span></a>
+      <a className="brand" href="/" aria-label="gatu.digital início"><img className="brand-mark" src="/gatu-logo.png" alt="" width={37} height={37}/><span>gatu.digital<small>Workspace</small></span></a>
       <div className="workspace-label">ESPAÇO DE TRABALHO</div>
       <div className="workspace-switch"><span className="avatar">g</span><div>gatu.digital<small>Uso interno</small></div><span className="switch-dots">···</span></div>
       <div className="nav-label">PRINCIPAL</div>
