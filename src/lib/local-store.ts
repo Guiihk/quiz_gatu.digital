@@ -201,22 +201,43 @@ export function hasAdmin() {
   return Boolean(db().prepare("SELECT 1 FROM admin WHERE id = 1").get());
 }
 
-export async function createAdmin(email: string, password: string) {
+async function hashAdminPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const hash = (await deriveKey(password, salt, 64) as Buffer).toString("hex");
+  return { salt, hash };
+}
+
+export async function createAdmin(email: string, password: string) {
+  const { salt, hash } = await hashAdminPassword(password);
   const result = db().prepare(`
     INSERT INTO admin (id, email, password_salt, password_hash)
     VALUES (1, ?, ?, ?) ON CONFLICT(id) DO NOTHING
   `).run(email, salt, hash);
-  return result.changes === 1;
+  return result.changes === 1 ? hash : null;
 }
 
-export async function verifyAdmin(email: string, password: string) {
+export async function resetAdminPassword(email: string, password: string) {
+  const { salt, hash } = await hashAdminPassword(password);
+  const connection = db();
+  connection.exec("BEGIN IMMEDIATE");
+  try {
+    const result = connection.prepare("UPDATE admin SET password_salt = ?, password_hash = ? WHERE id = 1 AND email = ?")
+      .run(salt, hash, email);
+    if (result.changes !== 1) return false;
+    connection.exec("DELETE FROM admin_sessions; DELETE FROM login_attempts;");
+    connection.exec("COMMIT");
+    return true;
+  } finally {
+    if (connection.isTransaction) connection.exec("ROLLBACK");
+  }
+}
+
+export async function verifyAdminCredentials(email: string, password: string) {
   const row = db().prepare("SELECT email, password_salt, password_hash FROM admin WHERE id = 1").get() as
     { email: string; password_salt: string; password_hash: string } | undefined;
   const actual = await deriveKey(password, row?.password_salt ?? "gatu-agendador-invalid-login", 64) as Buffer;
   const expected = row ? Buffer.from(row.password_hash, "hex") : Buffer.alloc(64);
-  return timingSafeEqual(actual, expected) && row?.email === email;
+  return timingSafeEqual(actual, expected) && row?.email === email ? row.password_hash : null;
 }
 
 export function reserveLoginAttempt() {
@@ -235,13 +256,16 @@ function sessionHash(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function createSession() {
+export function createSession(verifiedPasswordHash: string) {
   const connection = db();
   const now = Date.now();
   const token = randomBytes(32).toString("base64url");
   connection.prepare("DELETE FROM admin_sessions WHERE expires_at <= ?").run(now);
-  connection.prepare("INSERT INTO admin_sessions (token_hash, expires_at) VALUES (?, ?)")
-    .run(sessionHash(token), now + SESSION_SECONDS * 1000);
+  const result = connection.prepare(`
+    INSERT INTO admin_sessions (token_hash, expires_at)
+    SELECT ?, ? FROM admin WHERE id = 1 AND password_hash = ?
+  `).run(sessionHash(token), now + SESSION_SECONDS * 1000, verifiedPasswordHash);
+  if (result.changes !== 1) return null;
   connection.prepare("DELETE FROM login_attempts WHERE id = 1").run();
   return token;
 }

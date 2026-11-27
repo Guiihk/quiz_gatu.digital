@@ -27,6 +27,8 @@ Use um serviço **App** com origem **GitHub**, branch `main`, caminho de build `
 
 Após salvar e implantar, o log do Next.js deve mostrar `0.0.0.0:3020`. Se escolher outra porta, use o mesmo valor em `PORT` e na porta de destino em **Domains**. Para um banco novo, abra **Shell** no contêiner e execute `node scripts/create-admin.mjs voce@empresa.com`.
 
+Para redefinir a senha, execute `node scripts/create-admin.mjs --reset-password voce@empresa.com` no console do contêiner, com o e-mail já cadastrado. Digite a nova senha duas vezes no terminal. A redefinição encerra todas as sessões do administrador e preserva os dados do Agendador.
+
 ## Executar
 
 ```sh

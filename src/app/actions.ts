@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { randomBytes } from "node:crypto";
-import { createAdmin, createQuizDraft, createSession, deleteGoogleConnection, existingBooking, hasAdmin, hasSession, insertQuizResponse, loadDraft, occupiedBookings, publishDraft, readAgenda, readCrmActivity, readCrmLeads, readGoogleConnection, readPublication, readQuizPublication, recentQuizResponses, reserveBooking, reserveLoginAttempt, revokeSession, SESSION_SECONDS, upcomingBookings, verifyAdmin, writeAgenda, writeCrmLead, writeDraft } from "../lib/local-store";
+import { createAdmin, createQuizDraft, createSession, deleteGoogleConnection, existingBooking, hasAdmin, hasSession, insertQuizResponse, loadDraft, occupiedBookings, publishDraft, readAgenda, readCrmActivity, readCrmLeads, readGoogleConnection, readPublication, readQuizPublication, recentQuizResponses, reserveBooking, reserveLoginAttempt, revokeSession, SESSION_SECONDS, upcomingBookings, verifyAdminCredentials, writeAgenda, writeCrmLead, writeDraft } from "../lib/local-store";
 import { DEFAULT_CONFIG, parseCampaignSource, parseConfig, quizSlug, reviewQuizSubmission, safeExternalUrl, type QuizSubmission } from "../lib/quiz";
 import { CRM_NOTE_LIMIT, isCrmStage, isDealValueCents, type CrmEdit } from "../lib/crm";
 import { activeAgenda, availableSlots, DEFAULT_AGENDA, parseAgenda } from "../lib/schedule";
@@ -28,19 +28,24 @@ export async function authenticate(_: string, form: FormData): Promise<string> {
     return "Verifique o e-mail e a senha.";
   }
 
+  let verifiedPasswordHash;
   if (form.get("mode") === "setup") {
     if (process.env.NODE_ENV !== "development" || hasAdmin()) return "A configuração inicial está indisponível.";
     if (password.length < 12) return "Escolha uma senha com pelo menos 12 caracteres.";
-    if (!(await createAdmin(email, password))) return "O administrador já foi criado. Recarregue a página para entrar.";
+    verifiedPasswordHash = await createAdmin(email, password);
+    if (!verifiedPasswordHash) return "O administrador já foi criado. Recarregue a página para entrar.";
   } else {
     if (!reserveLoginAttempt()) return "Muitas tentativas de acesso. Aguarde até 15 minutos para tentar novamente.";
-    if (!(await verifyAdmin(email, password))) return "E-mail ou senha inválidos.";
+    verifiedPasswordHash = await verifyAdminCredentials(email, password);
+    if (!verifiedPasswordHash) return "E-mail ou senha inválidos.";
   }
 
   const jar = await cookies();
+  const session = createSession(verifiedPasswordHash);
+  if (!session) return "A senha foi alterada. Entre novamente.";
   const previous = jar.get(SESSION_COOKIE)?.value;
   if (previous) revokeSession(previous);
-  jar.set(SESSION_COOKIE, createSession(), {
+  jar.set(SESSION_COOKIE, session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
