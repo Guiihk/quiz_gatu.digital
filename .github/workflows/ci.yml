@@ -1,0 +1,49 @@
+name: Validar Agendador
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm exec -- next typegen
+      - run: npm run typecheck
+      - run: npm test
+      - name: Iniciar o contêiner de produção
+        run: |
+          cp .env.example .env.ci
+          docker compose --env-file .env.ci up -d --build --wait
+      - name: Verificar o painel, o service worker e o volume
+        run: |
+          page="$(curl --fail --silent --show-error http://127.0.0.1:3020/)"
+          grep -Fq 'Acesso administrativo indisponível' <<< "$page"
+          curl --fail --silent --show-error http://127.0.0.1:3020/agendador-sw.js -o /dev/null
+          printf '%s\n' 'apenas-para-teste-ci' | docker compose --env-file .env.ci exec -T agendador node scripts/create-admin.mjs ci@example.invalid
+          docker compose --env-file .env.ci up -d --force-recreate --wait
+          page="$(curl --fail --silent --show-error http://127.0.0.1:3020/)"
+          grep -Fq 'Entre no Agendador' <<< "$page"
+      - name: Coletar logs em caso de falha
+        if: failure()
+        run: docker compose --env-file .env.ci logs
+      - name: Encerrar o ambiente descartável
+        if: always()
+        run: |
+          if [ -f .env.ci ]; then
+            docker compose --env-file .env.ci down --volumes
+          fi
