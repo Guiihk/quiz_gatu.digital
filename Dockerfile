@@ -27,5 +27,5 @@ RUN install -d -m 0700 -o node -g node /app/data
 USER node
 EXPOSE 3020
 HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["node", "-e", "fetch('http://127.0.0.1:3020/', { signal: AbortSignal.timeout(4000) }).then(r => { if (!r.ok) process.exitCode = 1 }).catch(() => { process.exitCode = 1 })"]
+    CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || '3020') + '/', { signal: AbortSignal.timeout(4000) }).then(r => { if (!r.ok) process.exitCode = 1 }).catch(() => { process.exitCode = 1 })"]
 CMD ["node", "server.js"]

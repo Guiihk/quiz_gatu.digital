@@ -21,6 +21,12 @@ docker compose --env-file .env.vps exec agendador node scripts/create-admin.mjs 
 
 Se for migrar o banco local, faça uma cópia consistente com o Agendador parado, inclua a chave `<arquivo-do-banco>.meta-key` se existir e restaure no volume antes de ativar o serviço. O administrador existente já vem no banco. Para um contêiner configurado fora do Compose, mantenha `AGENDADOR_DB_PATH=/app/data/agendador.sqlite` e execute uma instância do Agendador por banco.
 
+### Subir no EasyPanel
+
+Use um serviço **App** com origem **GitHub**, branch `main`, caminho de build `/` e builder **Dockerfile**, apontando para o `Dockerfile` do repositório. Em **Environment**, configure `PORT=3020`. Em **Domains**, aponte o destino interno para **HTTP**, porta **3020**, e habilite HTTPS no domínio público. Em **Storage**, monte o volume persistente em `/app/data`.
+
+Após salvar e implantar, o log do Next.js deve mostrar `0.0.0.0:3020`. Se escolher outra porta, use o mesmo valor em `PORT` e na porta de destino em **Domains**. Para um banco novo, abra **Shell** no contêiner e execute `node scripts/create-admin.mjs voce@empresa.com`.
+
 ## Executar
 
 ```sh
