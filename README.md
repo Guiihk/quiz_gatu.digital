@@ -66,22 +66,22 @@ Com o Google Agenda conectado, o Agendador adiciona o e-mail informado na reserv
 
 O quadro inclui reservas confirmadas, inclusive as anteriores, e começa cada lead em **Agendado**. Arraste o cartão no computador ou abra a ficha e escolha uma etapa. A ficha reúne contato, respostas, horário, anotações e histórico. A origem aparece quando a pessoa abre o quiz com UTMs, por exemplo, `?utm_source=meta&utm_campaign=lancamento`. Respostas sem reserva continuam na aba **Respostas**.
 
-Na ficha do lead, abra **Rastreamento Meta** para consultar os identificadores disponíveis. Com autorização opcional no quiz, novas reservas podem guardar `_fbp`, `_fbc`, `fbclid`, a URL limpa e a identificação do navegador. Um `fbc` pode ser montado a partir do `fbclid` real quando o cookie correspondente não existe.
+Na ficha do lead, abra **Rastreamento Meta** para consultar os identificadores disponíveis. Com o rastreamento habilitado por padrão no quiz, novas reservas podem guardar `_fbp`, `_fbc`, `fbclid`, a URL limpa e a identificação do navegador. Um `fbc` pode ser montado a partir do `fbclid` real quando o cookie correspondente não existe.
 
 ### Testar a API de Conversões do Meta
 
 1. No Gerenciador de Eventos, selecione a fonte de dados e copie o ID do pixel, um token da API de Conversões e o código de **Testar eventos**.
 2. Preencha os dados em **Configurações → Integrações → Meta · API de Conversões** e salve. Ao trocar o pixel, informe o token do novo pixel. Para atualizar só o código de teste, deixe o token em branco para manter o atual.
 3. Em **Configurações → Integrações**, confira se aparece **Modo teste** e clique em **Enviar evento de teste**. Busque por `AgendadorTesteConexao` e pelo ID exibido pelo painel em **Testar eventos** no Meta. Esse diagnóstico usa dados fictícios e não cria uma reserva.
-4. Para validar o evento de negócio de ponta a ponta, faça uma reserva pelo quiz publicado localmente, marque a autorização opcional e confira o evento `Schedule` em **Testar eventos**. A prévia do editor não gera eventos.
+4. Para validar o evento de negócio de ponta a ponta, faça uma reserva pelo quiz publicado localmente e confira o evento `Schedule` em **Testar eventos**. A prévia do editor não gera eventos.
 
 Antes do primeiro salvamento pelo painel, a integração usa as variáveis `META_PIXEL_ID`, `META_CONVERSIONS_ACCESS_TOKEN` e `META_TEST_EVENT_CODE` do ambiente. Depois que a configuração for salva no painel, ela tem prioridade. O token é criptografado no SQLite. Ao migrar a configuração para a VPS, preserve no volume persistente o arquivo de chave `<arquivo-do-banco>.meta-key` ao lado do SQLite.
 
-O servidor envia o evento após a confirmação da reserva com autorização. A API recebe os identificadores disponíveis e o e-mail e o telefone em SHA-256. Cada reserva tem um `event_id` estável nas tentativas de envio. Reservas anteriores à configuração não entram na fila. Em desenvolvimento o código de teste é obrigatório para ativar o envio. Na VPS, retire o código de teste somente quando o envio de produção estiver aprovado.
+O servidor envia o evento após a confirmação da reserva. A API recebe os identificadores disponíveis e o e-mail e o telefone em SHA-256. Cada reserva tem um `event_id` estável nas tentativas de envio. Reservas anteriores à configuração não entram na fila. Em desenvolvimento o código de teste é obrigatório para ativar o envio. Na VPS, retire o código de teste somente quando o envio de produção estiver aprovado.
 
-Para medir um fechamento, salve o **Valor do negócio (R$)** na ficha e mova o card para **Ganho**. Se o valor ainda estiver vazio, o evento `Purchase` entra na fila quando o valor for salvo com o card em **Ganho**. O sistema usa o valor salvo nesse momento em `BRL` e registra uma compra por card. A autorização do quiz precisa incluir vendas. Autorizações anteriores que cobrem somente agendamentos continuam válidas para `Schedule`.
+Para medir um fechamento, salve o **Valor do negócio (R$)** na ficha e mova o card para **Ganho**. Se o valor ainda estiver vazio, o evento `Purchase` entra na fila quando o valor for salvo com o card em **Ganho**. O sistema usa o valor salvo nesse momento em `BRL` e registra uma compra por card. Novas reservas habilitam a medição de vendas por padrão. Autorizações anteriores que cobrem somente agendamentos continuam válidas para `Schedule`.
 
-Ao mover um card para **Proposta enviada**, o CRM registra `InitiateCheckout` para o Meta. O evento exige autorização para medir vendas e pode ser enviado mesmo com o valor do negócio em branco. Cada card gera um único evento de proposta, inclusive se voltar a essa etapa mais tarde.
+Ao mover um card para **Proposta enviada**, o CRM registra `InitiateCheckout` para o Meta. O evento pode ser enviado mesmo com o valor do negócio em branco. Cada card gera um único evento de proposta, inclusive se voltar a essa etapa mais tarde.
 
 ### Avisos de novos agendamentos no navegador
 

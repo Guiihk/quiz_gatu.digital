@@ -20,7 +20,7 @@ export function getQuestionFields(step: number) {
   return QUESTION_FIELDS[step as keyof typeof QUESTION_FIELDS];
 }
 
-export function QuizScreen({ config, step, position, interactive = false, answers = BLANK_ANSWERS, onAnswer, onNext, error = "", customAnswer = "", onCustomAnswer, publicMode = false, submitting = false, bookingEnabled = false, bookingPanel, scheduleReady = true, canSubmitSchedule = true, trackingConsent }: {
+export function QuizScreen({ config, step, position, interactive = false, answers = BLANK_ANSWERS, onAnswer, onNext, error = "", customAnswer = "", onCustomAnswer, publicMode = false, submitting = false, bookingEnabled = false, bookingPanel, scheduleReady = true, canSubmitSchedule = true }: {
   config: QuizConfig;
   publicMode?: boolean;
   submitting?: boolean;
@@ -28,7 +28,6 @@ export function QuizScreen({ config, step, position, interactive = false, answer
   bookingPanel?: ReactNode;
   scheduleReady?: boolean;
   canSubmitSchedule?: boolean;
-  trackingConsent?: { agreed: boolean; onChange: (agreed: boolean) => void };
   step: number;
   position: number;
   interactive?: boolean;
@@ -109,11 +108,6 @@ export function QuizScreen({ config, step, position, interactive = false, answer
           <input type="email" maxLength={254} autoComplete="email" required={required} value={answers.email}
             readOnly={!interactive || submitting} onChange={e => onAnswer?.("email", e.target.value)} placeholder="voce@empresa.com.br"/>
         </label>
-        {publicMode && bookingEnabled && trackingConsent && <label className="quiz-tracking-choice">
-          <input type="checkbox" checked={trackingConsent.agreed} disabled={submitting}
-            onChange={event => trackingConsent.onChange(event.target.checked)}/>
-          <span>Autorizo o envio ao Meta dos identificadores do navegador e do clique, do meu e-mail e telefone em formato hash e do valor de uma eventual compra para medir agendamentos, propostas e vendas gerados por anúncios. Isso é opcional.</span>
-        </label>}
         {publicMode ? <button className="quiz-cta" type="submit" disabled={submitting || !canSubmitSchedule}>
           {submitting ? "Enviando…" : bookingEnabled ? "Confirmar agendamento" : "Enviar respostas"}<ArrowRight size={18}/></button>
           : <><p className="preview-disclaimer">Prévia de layout. Nenhuma reunião é criada.</p><button className="quiz-cta" type="button" disabled>Agendamento disponível após integração</button></>}
@@ -169,7 +163,6 @@ export function QuizFlow({ config, publication }: { config: QuizConfig; publicat
   const [step, setStep] = useState(sequence[0]);
   const [history, setHistory] = useState<number[]>([]);
   const [answers, setAnswers] = useState<QuizAnswers>({ ...BLANK_ANSWERS });
-  const [metaConsent, setMetaConsent] = useState(false);
   const [customAnswers, setCustomAnswers] = useState<Record<number, string>>({});
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -224,7 +217,7 @@ export function QuizFlow({ config, publication }: { config: QuizConfig; publicat
         const { slug, revision, responseId } = publication;
         const result = await submitQuizResponse(slug, revision, responseId, answers, customAnswers,
           step === SCHEDULE_SCREEN ? selectedSlot ?? undefined : undefined, publication.source,
-          metaConsent ? { agreed: true, purchaseConsent: true, ...publication.click } : undefined);
+          publication.click);
         if (result.outcome) {
           if (result.booking) setBooking(result.booking);
           setOutcome(result.outcome);
@@ -257,7 +250,6 @@ export function QuizFlow({ config, publication }: { config: QuizConfig; publicat
     setStep(sequence[0]);
     setHistory([]);
     setAnswers({ ...BLANK_ANSWERS });
-    setMetaConsent(false);
     setCustomAnswers({});
     setError("");
   }
@@ -275,7 +267,6 @@ export function QuizFlow({ config, publication }: { config: QuizConfig; publicat
         onAnswer={(key, value) => { setAnswers(current => ({ ...current, [key]: value })); setError(""); }}
         onNext={next} error={error} customAnswer={customAnswers[step]} publicMode={Boolean(publication)} submitting={submitting}
         bookingPanel={bookingPanel} bookingEnabled={slots?.active} scheduleReady={slots !== null}
-        trackingConsent={publication ? { agreed: metaConsent, onChange: setMetaConsent } : undefined}
         canSubmitSchedule={slots !== null && (!slots.active || selectedSlot !== null)}
         onCustomAnswer={value => { setCustomAnswers(current => ({ ...current, [step]: value })); setError(""); }}/>
     </div>

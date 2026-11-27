@@ -184,7 +184,7 @@ export async function updateCrmLead(id: string, revision: number, edit: unknown)
     ? metaConversionsConfig()?.destination : undefined;
   const lead = writeCrmLead(id, revision, change, metaDestination);
   if (!lead) return { error: "O cartão mudou em outra aba. Atualize o quadro antes de salvar." };
-  if (metaDestination && lead.metaTracking?.purchaseConsent &&
+  if (metaDestination && (lead.metaTracking?.enabledAt !== undefined || lead.metaTracking?.purchaseConsent) &&
     (movingToProposal || (lead.stage === "won" && lead.dealValueCents !== null))) {
     after(() => deliverMetaConversions());
   }
@@ -323,7 +323,7 @@ export async function loadQuizSlots(slug: string, revision: number) {
 }
 
 export async function submitQuizResponse(slug: string, revision: number, id: string, answers: unknown, customAnswers: unknown,
-  start?: number, rawSource?: unknown, tracking?: { agreed: boolean; purchaseConsent?: boolean; fbclid?: string; seenAt?: number }) {
+  start?: number, rawSource?: unknown, tracking?: { fbclid?: string; seenAt?: number }) {
   if (!isQuizLink(slug, revision)) return { error: "Link inválido." };
   if (typeof id !== "string" || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) return { error: "Atualize a página para enviar sua resposta." };
   const existing = existingBooking(id, slug, revision);
@@ -357,16 +357,13 @@ export async function submitQuizResponse(slug: string, revision: number, id: str
           }
         } catch { return { error: "Não foi possível consultar o Google Agenda. Tente novamente." }; }
       }
-      let bookingResponse: QuizSubmission = submission;
-      if (tracking?.agreed === true) {
-        const [jar, request] = await Promise.all([cookies(), headers()]);
-        bookingResponse = { ...submission, metaTracking: buildMetaTracking({
-          fbp: jar.get("_fbp")?.value, fbc: jar.get("_fbc")?.value,
-          purchaseConsent: tracking.purchaseConsent === true,
-          fbclid: tracking.fbclid, clickSeenAt: tracking.seenAt,
-          userAgent: request.get("user-agent"), origin: request.get("origin"), slug,
-        }, Date.now()) };
-      }
+      const [jar, request] = await Promise.all([cookies(), headers()]);
+      const bookingResponse: QuizSubmission = { ...submission, metaTracking: buildMetaTracking({
+        fbp: jar.get("_fbp")?.value, fbc: jar.get("_fbc")?.value,
+        enabledByDefault: true,
+        fbclid: tracking?.fbclid, clickSeenAt: tracking?.seenAt,
+        userAgent: request.get("user-agent"), origin: request.get("origin"), slug,
+      }, Date.now()) };
       if (window.start < Date.now() + agenda.config.noticeHours * 3_600_000) {
         return { error: "A antecedência mínima para este horário expirou. Escolha outro horário.", refreshSlots: true };
       }

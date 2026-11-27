@@ -29,7 +29,7 @@ test('envia InitiateCheckout uma vez ao entrar em Proposta enviada, mesmo sem va
   const trackingInput = { fbclid: 'clique', userAgent: 'Test browser', slug: 'quiz' };
   for (const [index, id] of ['proposta', 'only-schedule'].entries()) {
     const start = now + (index + 1) * 3_600_000;
-    const metaTracking = buildMetaTracking({ ...trackingInput, purchaseConsent: id === 'proposta' }, now);
+    const metaTracking = buildMetaTracking({ ...trackingInput, enabledByDefault: id === 'proposta' }, now);
     assert.ok(reserveBooking('quiz', 1, 1, id, { start, end: start + 3_600_000 }, 'Diagnóstico', {
       outcome: 'contact', answers: { email: 'Lead@EXAMPLE.test' }, extra: [], metaTracking,
     }));

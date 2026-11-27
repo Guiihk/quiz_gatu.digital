@@ -84,7 +84,7 @@ export default function MetaSettingsPanel() {
 
   return <section className="meta-settings" aria-labelledby="meta-settings-title">
     <div className="integration">
-      <div><h3 id="meta-settings-title">Meta · API de Conversões</h3><p>Envia reservas, propostas e negócios ganhos ao Meta, com autorização.</p></div>
+      <div><h3 id="meta-settings-title">Meta · API de Conversões</h3><p>Envia reservas, propostas e negócios ganhos ao Meta.</p></div>
       {settings && <span className="badge">{status}</span>}
     </div>
     {!settings && !error && <p className="muted" role="status">Carregando integração Meta…</p>}

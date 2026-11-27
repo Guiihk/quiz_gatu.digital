@@ -4,6 +4,7 @@ const CLICK_COOKIE = /^fb\.\d{1,2}\.\d{13}\.([a-zA-Z0-9_-]{1,1024})(?:\.[a-zA-Z0
 
 type MetaTrackingInput = {
   purchaseConsent?: boolean;
+  enabledByDefault?: boolean;
   fbp?: unknown;
   fbc?: unknown;
   fbclid?: unknown;
@@ -14,7 +15,8 @@ type MetaTrackingInput = {
 };
 
 export type MetaTracking = {
-  consentAt: number;
+  consentAt?: number;
+  enabledAt?: number;
   purchaseConsent?: true;
   fbp?: string;
   fbc?: string;
@@ -28,7 +30,7 @@ export function validMetaClickId(value: unknown): string | undefined {
 }
 
 export function buildMetaTracking(input: MetaTrackingInput, now: number): MetaTracking {
-  const result: MetaTracking = { consentAt: now };
+  const result: MetaTracking = input.enabledByDefault ? { enabledAt: now } : { consentAt: now };
   if (input.purchaseConsent === true) result.purchaseConsent = true;
   if (typeof input.fbp === "string" && BROWSER_COOKIE.test(input.fbp)) result.fbp = input.fbp;
 

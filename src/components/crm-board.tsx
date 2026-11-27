@@ -248,7 +248,7 @@ function LeadDetails({ lead, busy, onClose, onEdit, onRemove }: {
           <button className="button primary" disabled={!valueDirty || busy}>Salvar valor</button>
         </form>
         {valueDirty && lead.stage !== "won" && <p className="muted">Salve o valor editado antes de mover o card para Ganho.</p>}
-        {lead.stage === "won" && lead.dealValueCents === null && lead.metaTracking?.purchaseConsent &&
+        {lead.stage === "won" && lead.dealValueCents === null && (lead.metaTracking?.enabledAt !== undefined || lead.metaTracking?.purchaseConsent) &&
           <p className="muted">Salve o valor do negócio para enviar o fechamento ao Meta.</p>}
       </section>
       {!!fields.length && <section><h3>Contato e respostas</h3>
@@ -263,8 +263,8 @@ function LeadDetails({ lead, busy, onClose, onEdit, onRemove }: {
         <details>
           <summary className="crm-meta-summary">Rastreamento Meta</summary>
           {lead.metaTracking ? <>
-            <p className="muted">Autorizado no quiz em {dateFormat.format(lead.metaTracking.consentAt)}.</p>
-            {!lead.metaTracking.purchaseConsent && <p className="muted">A autorização registrada permite medir agendamentos.</p>}
+            {lead.metaTracking.enabledAt !== undefined ? <p className="muted">Rastreamento habilitado por padrão neste quiz.</p> : lead.metaTracking.consentAt !== undefined && <p className="muted">Autorizado no quiz em {dateFormat.format(lead.metaTracking.consentAt)}.</p>}
+            {lead.metaTracking.enabledAt === undefined && !lead.metaTracking.purchaseConsent && <p className="muted">A autorização registrada permite medir agendamentos.</p>}
             <dl>{[
               ["fbp (navegador)", lead.metaTracking.fbp], ["fbc (clique)", lead.metaTracking.fbc],
               ["fbclid", lead.metaTracking.fbclid], ["URL do quiz", lead.metaTracking.eventSourceUrl],

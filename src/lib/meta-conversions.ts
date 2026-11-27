@@ -30,7 +30,7 @@ function conversionEvent({ eventName, id, occurredAt, valueCents, submission }: 
   const tracking = submission.metaTracking;
   if (!tracking) return null;
   if (eventName === "Schedule" && (!tracking.clientUserAgent || !tracking.eventSourceUrl)) return null;
-  if (eventName !== "Schedule" && tracking.purchaseConsent !== true) return null;
+  if (eventName !== "Schedule" && tracking.enabledAt === undefined && tracking.purchaseConsent !== true) return null;
   if (eventName === "Purchase" && valueCents === undefined) return null;
   const email = submission.answers.email?.trim().toLowerCase();
   const phone = submission.answers.phone?.replace(/\D/g, "");

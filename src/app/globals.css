@@ -187,8 +187,6 @@
 .booking-alert-settings p { margin: 0 0 6px; color: var(--muted); font-size: 11px; }
 .booking-alert-settings svg { color: var(--green); }
 @media (max-width: 767px) { .booking-alert-panel { width: min(358px, calc(100vw - 32px)); } }
-.quiz-tracking-choice { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0 18px; font-size: 12px; line-height: 1.5; }
-.quiz-tracking-choice input { accent-color: var(--quiz-accent); margin-top: 3px; }
 @media (max-width: 600px) { .crm-board { grid-auto-columns: minmax(200px, 78%); scroll-snap-type: x proximity; } .crm-lane { scroll-snap-align: start; } }
 
 .public-quiz {

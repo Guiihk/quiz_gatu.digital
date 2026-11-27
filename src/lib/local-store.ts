@@ -672,14 +672,14 @@ export function writeCrmLead(id: string, revision: number, edit: CrmEdit, metaDe
         .run(id, Date.now(), moved ? "stage" : "note", moved ? previous.stage : null, moved ? stage : null);
     }
     const lead = toCrmLead({ ...previous, stage, note, dealValueCents, revision: revision + 1 });
-    if (metaDestination && moved && lead.stage === "proposal" && lead.metaTracking?.purchaseConsent === true) {
+    if (metaDestination && moved && lead.stage === "proposal" && (lead.metaTracking?.enabledAt !== undefined || lead.metaTracking?.purchaseConsent === true)) {
       const now = Date.now();
       connection.prepare(`
         INSERT INTO meta_checkout_deliveries (booking_id, destination, occurred_at, next_attempt_at)
         VALUES (?, ?, ?, ?) ON CONFLICT(booking_id) DO NOTHING
       `).run(id, metaDestination, now, now);
     }
-    if (metaDestination && lead.stage === "won" && (moved || valued) && dealValueCents !== null && lead.metaTracking?.purchaseConsent === true) {
+    if (metaDestination && lead.stage === "won" && (moved || valued) && dealValueCents !== null && (lead.metaTracking?.enabledAt !== undefined || lead.metaTracking?.purchaseConsent === true)) {
       const now = Date.now();
       connection.prepare(`
         INSERT INTO meta_purchase_deliveries (booking_id, destination, value_cents, occurred_at, next_attempt_at)
