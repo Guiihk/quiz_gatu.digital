@@ -1,6 +1,14 @@
 self.addEventListener("push", event => {
   let payload;
   try { payload = event.data?.json(); } catch { return; }
+  if (payload?.test === true) {
+    event.waitUntil(self.registration.showNotification("Notificação de teste", {
+      body: "O Agendador da gatu.digital enviou este aviso.",
+      icon: "/gatu-logo.png",
+      tag: "agendador-teste",
+    }));
+    return;
+  }
   if (!payload || typeof payload.id !== "string") return;
 
   event.waitUntil(self.registration.showNotification("Novo agendamento", {

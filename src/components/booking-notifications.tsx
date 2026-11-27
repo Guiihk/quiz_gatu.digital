@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bell, Check, CheckCircle } from "@phosphor-icons/react";
-import { disableBrowserPush, enableBrowserPush, loadBookingNotifications, loadPushSettings, readBookingAlerts } from "../app/actions";
+import { disableBrowserPush, enableBrowserPush, loadBookingNotifications, loadPushSettings, readBookingAlerts, testBrowserPush } from "../app/actions";
 import { AGENDA_ZONE } from "../lib/schedule";
 
 type Feed = NonNullable<Awaited<ReturnType<typeof loadBookingNotifications>>["feed"]>;
@@ -14,6 +14,7 @@ export default function BookingNotifications({ onOpenAgenda }: { onOpenAgenda: (
   const [error, setError] = useState("");
   const [pushStatus, setPushStatus] = useState<"loading" | "unsupported" | "blocked" | "off" | "on" | "unavailable">("loading");
   const [pushError, setPushError] = useState("");
+  const [testNotice, setTestNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -130,6 +131,24 @@ export default function BookingNotifications({ onOpenAgenda }: { onOpenAgenda: (
     } finally { setBusy(false); }
   }
 
+  async function testPush() {
+    if (!setup.current || busy) return;
+    setBusy(true);
+    setPushError("");
+    setTestNotice("");
+    try {
+      const subscription = await setup.current.registration.pushManager.getSubscription();
+      if (!subscription) { setPushStatus("off"); return; }
+      const result = await testBrowserPush(subscription.endpoint);
+      if (result.error) setPushError(result.error);
+      else setTestNotice("O serviço de push aceitou o teste. Confira o alerta e a Central de Notificações do Windows.");
+    } catch {
+      setPushError("Não foi possível enviar o teste.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function markRead(id?: string) {
     const current = ++request.current;
     try {
@@ -174,6 +193,8 @@ export default function BookingNotifications({ onOpenAgenda }: { onOpenAgenda: (
         {pushStatus === "unavailable" && <p>Não foi possível preparar as notificações do navegador.</p>}
         {pushStatus === "loading" && <p>Verificando notificações do navegador…</p>}
         {pushError && <p role="alert">{pushError}</p>}
+        {testNotice && <p role="status">{testNotice}</p>}
+        {pushStatus === "on" && <button type="button" className="button primary" disabled={busy} onClick={testPush}>Enviar notificação de teste</button>}
         {(pushStatus === "on" || pushStatus === "off") && <button type="button" className={pushStatus === "on" ? "button secondary" : "button primary"}
           disabled={busy} onClick={togglePush}>{busy ? "Aguarde…" : pushStatus === "on" ? "Desativar neste navegador" : "Ativar notificações no navegador"}</button>}
       </div>

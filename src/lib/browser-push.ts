@@ -1,5 +1,6 @@
 import { generateVAPIDKeys, sendNotification } from "web-push";
 import { claimPushDeliveries, deletePushSubscription, finishPushDelivery, nextPushAttempt, readPushKeys, savePushKeys } from "./local-store";
+import { readPushSubscription } from "./local-store";
 
 const CONTACT = "https://gatu.digital";
 let retryTimer: { at: number; handle: ReturnType<typeof setTimeout> } | undefined;
@@ -26,6 +27,26 @@ export function parsePushSubscription(raw: unknown) {
 
 export function ensurePushKeys() {
   return readPushKeys() ?? savePushKeys(generateVAPIDKeys());
+}
+
+export async function sendBrowserPushTest(endpoint: string) {
+  if (!safePushEndpoint(endpoint)) return { error: "Inscrição do navegador inválida." };
+  const keys = readPushSubscription(endpoint);
+  const vapid = readPushKeys();
+  if (!keys || !vapid) return { error: "Ative as notificações neste navegador novamente." };
+  try {
+    await sendNotification({ endpoint, keys }, JSON.stringify({ test: true }), {
+      vapidDetails: { subject: CONTACT, ...vapid }, TTL: 60, urgency: "high", timeout: 8000,
+    });
+    return { accepted: true };
+  } catch (error) {
+    const code = typeof error === "object" && error && "statusCode" in error ? Number(error.statusCode) : 0;
+    if (code === 404 || code === 410) {
+      deletePushSubscription(endpoint);
+      return { error: "A inscrição expirou. Ative as notificações novamente." };
+    }
+    return { error: code ? `O serviço de push recusou o teste (HTTP ${code}).` : "O serviço de push não respondeu ao teste." };
+  }
 }
 
 function scheduleRetry(at: number) {

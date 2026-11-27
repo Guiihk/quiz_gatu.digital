@@ -13,7 +13,7 @@ import { googleAuthorization, googleBusyTimes, googleOAuthConfig, syncGoogleBook
 import { buildMetaTracking } from "../lib/meta-tracking";
 import { currentMetaSettings, deliverMetaConversions, metaConversionsConfig, sendMetaConnectionTest } from "../lib/meta-conversions";
 import { deleteCrmCard, deletePushSubscription, hasPushSubscription, markBookingNotificationsRead, readBookingNotifications, savePushSubscription, writeMetaSettings } from "../lib/local-store";
-import { deliverBookingPush, ensurePushKeys, parsePushSubscription, safePushEndpoint } from "../lib/browser-push";
+import { deliverBookingPush, ensurePushKeys, parsePushSubscription, safePushEndpoint, sendBrowserPushTest } from "../lib/browser-push";
 
 const SESSION_COOKIE = "agendador_session";
 
@@ -138,6 +138,11 @@ export async function readBookingAlerts(id?: string) {
   if (id !== undefined && (typeof id !== "string" || id.length > 36)) return { error: "Notificação inválida." };
   markBookingNotificationsRead(id);
   return { feed: readBookingNotifications() };
+}
+
+export async function testBrowserPush(endpoint: string) {
+  if (!(await isSignedIn())) return { error: "Entre novamente para testar as notificações." };
+  return sendBrowserPushTest(endpoint);
 }
 
 export async function loadPushSettings(endpoint?: string) {

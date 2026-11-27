@@ -571,6 +571,11 @@ export function savePushKeys(keys: PushKeys) {
   return readPushKeys()!;
 }
 
+export function readPushSubscription(endpoint: string) {
+  return db().prepare("SELECT browser_key AS p256dh, auth_secret AS auth FROM push_subscriptions WHERE endpoint = ?")
+    .get(endpoint) as { p256dh: string; auth: string } | undefined;
+}
+
 export function hasPushSubscription(endpoint: string) {
   return Boolean(db().prepare("SELECT 1 FROM push_subscriptions WHERE endpoint = ?").get(endpoint));
 }
